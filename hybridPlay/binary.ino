@@ -5,3 +5,27 @@ void sendBinary(int value){
   Serial.write(lowByte(value));
   Serial.write(highByte(value));
 }
+
+void sendBinaryIR(int value){
+  int cmIR = getCmFromValue(value);
+  // send the two byte that comprise an integer
+  Serial.write(lowByte(cmIR));
+  Serial.write(highByte(cmIR));
+}
+
+// Standard Arfduino Serial.print (for TESTING)
+void sendDistanceIR(int value){
+  int cmIR = getCmFromValue(value);
+  
+  Serial.print(",");
+  if(cmIR < 100){
+    Serial.print(0);
+  }else{
+    Serial.print(cmIR);
+  }
+  Serial.print(",");
+}
+
+
+
+
