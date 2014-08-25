@@ -31,6 +31,7 @@ int speakerOut = 9;
 Kalman kalmanX;
 Kalman kalmanY;
 Kalman kalmanZ;
+Kalman kalmanIR;
 
 void setup(){ 
   Serial.begin(115200);
@@ -48,6 +49,7 @@ void setup(){
   kalmanX.init(analogRead(0));
   kalmanY.init(analogRead(1));
   kalmanZ.init(analogRead(2));
+  kalmanIR.init(analogRead(4));
 
   // device initialized
   blinkLed(13,3);
@@ -70,8 +72,8 @@ void loop() {
   valBat  = (int)analogRead(3); // Bateria
   sendBinary(valBat);  // 2 BYTES
   
-  valIR   = (int)analogRead(4); // infrarrojo
-  sendBinary(valIR); // 2 BYTES
+  valIR   = (int)kalmanZ.update(analogRead(4)); // infrarrojo
+  sendValueIR(valIR); // 2 BYTES
   
   delay(20);
   
