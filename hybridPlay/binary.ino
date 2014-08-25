@@ -13,7 +13,7 @@ void sendBinaryIR(int value){
   Serial.write(highByte(cmIR));
 }
 
-// Standard Arfduino Serial.print (for TESTING)
+// Standard Arduino Serial.print (for TESTING)
 void sendDistanceIR(int value){
   int cmIR = getCmFromValue(value);
   
@@ -23,6 +23,12 @@ void sendDistanceIR(int value){
   }else{
     Serial.print(cmIR);
   }
+  Serial.print(",");
+}
+
+void sendValueIR(int value){
+  Serial.print(",");
+  Serial.print(value);
   Serial.print(",");
 }
 

@@ -71,7 +71,7 @@ void loop() {
   sendBinary(valBat);  // 2 BYTES
   
   valIR   = (int)analogRead(4); // infrarrojo
-  sendBinary(valIR); // 2 BYTES
+  sendValueIR(valIR); // 2 BYTES
   
   delay(20);
   
