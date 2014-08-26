@@ -72,7 +72,7 @@ void loop() {
   valBat  = (int)analogRead(3); // Bateria
   sendBinary(valBat);  // 2 BYTES
   
-  valIR   = (int)kalmanZ.update(analogRead(4)); // infrarrojo
+  valIR   = (int)kalmanIR.update(analogRead(4)); // infrarrojo
   sendValueIR(valIR); // 2 BYTES
   
   delay(20);
