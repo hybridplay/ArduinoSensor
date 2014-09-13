@@ -18,6 +18,7 @@
 #include "Kalman.h"
 
 const char HEADER = 'H';
+const char FOOTER = 'F';
 
 int valX = 0;
 int valY = 0;
@@ -69,15 +70,17 @@ void loop() {
   valZ    = (int)kalmanZ.update(analogRead(2));
   sendBinary(valZ);   // 2 BYTES
   
+  valIR   = (int)kalmanIR.update(analogRead(4)); // infrarrojo
+  sendBinary(valIR); // 2 BYTES
+  
   valBat  = (int)analogRead(3); // Bateria
   sendBinary(valBat);  // 2 BYTES
   
-  valIR   = (int)kalmanIR.update(analogRead(4)); // infrarrojo
-  sendValueIR(valIR); // 2 BYTES
+  Serial.write(FOOTER); // 1 BYTE
   
   delay(20);
   
-  // total message 11 BYTES long ==> 44 bits
+  // total message 12 BYTES long ==> 48 bits
   
   /* Example message:
    *
@@ -89,6 +92,8 @@ void loop() {
    * 500   -- pin 2 has a value of 500, the reminder of 500 divided by 256 is 244,
    *          the number of times 500 can be divided by 256 is 1, so here
    *          we have the first byte of 244 and the second byte of 1 
+   *
+   * 70 -- the character 'F', the FOOTER
    */
    
    /* RECEIVING (on the other side)
