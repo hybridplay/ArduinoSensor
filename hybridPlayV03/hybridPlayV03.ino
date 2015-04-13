@@ -3,22 +3,37 @@
  * HybridPlay v0.3 | 02/2015
  * ------------------------- 
  *  
- * Read HybridPlay sensors (Pololu AltIMU-10 board & infrared), and
+ * Read HybridPlay sensors (Pololu AltIMU-10 board & infrared SI1143 proximity sensor), and
  * send the data via serial/bluetooth
  *
- * rev 2:
- * - sends analog pins data as binary data
- * - filtering sensor data with simple 1D kalman filter
+ * rev 3:
+ * - updated electronics
  *
  * (cc) 2015 Lalalab n3m3da
  * http://www.lalalab.org
  * http://www.d3cod3.org
  */
  
+// External Libraries
+#include <SI114.h>
 #include <Wire.h>
 #include "Kalman.h"
 
-// sensor init & calibration
+////////////////////////////////////////////////
+// SI1143 proximity sensor Variables
+const int PORT_FOR_SI114 = 3;
+const int samples = 4; // samples for smoothing 1 to 10 seem useful, increase for smoother waveform (with less resolution) 
+
+unsigned long red, IR1, IR2, totalIR;
+unsigned long minIR = 10000000, maxIR = 0;
+unsigned long mappedIR = 0;
+int counterIR = 0;
+
+PortI2C myBus (PORT_FOR_SI114);
+PulsePlug pulse (myBus);
+
+////////////////////////////////////////////////
+// Pololu AltIMU-10 sensor init & calibration
 int SENSOR_SIGN[9] = {1,1,1,-1,-1,-1,1,1,1}; //Correct directions x,y,z - gyro, accelerometer, magnetometer
 
 // LSM303 accelerometer: 8 g sensitivity
@@ -119,6 +134,7 @@ float Temporary_Matrix[3][3]={
 #define STATUS_LED 13
 
 // Serial packet
+#define SERIAL_BAUD_VEL 115200
 const char HEADER = 'H';
 const char FOOTER = 'F';
 
@@ -127,14 +143,17 @@ int angleY = 0;
 int angleZ = 0;
 int valIR = 0;
 
+// DEBUG vars
+boolean debugMode = false;
 
 void setup(){ 
-  Serial.begin(115200);
+  Serial.begin(SERIAL_BAUD_VEL);
   
   pinMode(STATUS_LED,OUTPUT);
   
-  // INIT sensor
+  // INIT sensors
   initSensor();
+  initIRSensor();
   
   timer = millis();
   delay(20);
@@ -143,6 +162,9 @@ void setup(){
 }
 
 void loop() {
+  
+  resetIRReadings();
+  
   if((millis()-timer) >= 20){  // Main loop runs at 50Hz (same as 50 FPS)
     counter++;
     timer_old = timer;
@@ -172,10 +194,22 @@ void loop() {
     Euler_angles();
     // ***
     
-    prepareData();
-    sendSerialPacket();
+    // IR readings
+    readIRSensor();
     
   }
+  
+  // Prepare serial data
+  extractIRReadings();
+  prepareData();
+  
+  // print on serial port
+  if(debugMode){
+    printData(); // <-- TESTING, HUMAN READABLE CONSOLE PRINT
+  }else{
+    sendSerialPacket(); // <-- binary data send
+  }
+  
 }
 
 

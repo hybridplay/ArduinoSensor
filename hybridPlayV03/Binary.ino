@@ -14,7 +14,7 @@ void printData(){
   Serial.print(",");
   Serial.print(angleZ);
   Serial.print(", IR ");
-  Serial.print(valIR);
+  Serial.print(long(mappedIR));
   Serial.println(); 
 }
 
@@ -22,7 +22,7 @@ void prepareData(){
   angleX = int(ToDeg(roll));
   angleY = int(ToDeg(pitch));
   angleZ = int(ToDeg(yaw));
-  // valIR = 0; // ----- TODO
+  valIR  = int(mappedIR);
 }
 
 void sendSerialPacket(){
