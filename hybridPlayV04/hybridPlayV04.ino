@@ -1,12 +1,12 @@
 
 /*
- * HybridPlay v0.3 | 04/2015
+ * HybridPlay v0.4 | 05/2015
  * ------------------------- 
  *  
- * Read HybridPlay sensors (Pololu AltIMU-10 board & infrared SI1143 proximity sensor), and
+ * Read HybridPlay sensors (Pololu AltIMU-10 board & infrared GP2Y0E02B), and
  * send the data via serial/bluetooth
  *
- * rev 3:
+ * rev 4:
  * - updated electronics
  *
  * (cc) 2015 Lalalab n3m3da
@@ -17,25 +17,19 @@
 // External Libraries
 #include <SI114.h>
 #include <Wire.h>
-#include "Kalman.h"
 
 // DEBUG vars
-boolean debugMode = true;
+boolean debugMode = false;
 
 ////////////////////////////////////////////////
-// SI1143 proximity sensor Variables
-const int PORT_FOR_SI114 = 4;
-const int samples = 4; // samples for smoothing 1 to 10 seem useful, increase for smoother waveform (with less resolution) 
+// GP2Y0E02B IR proximity sensor Variables
+#define IR_ADDRESS       0x80 >> 1  // Arduino uses 7 bit addressing so we shift address right one bit
+#define IR_DISTANCE_REG  0x5E
+#define IR_SHIFT         0x35
 
-unsigned long red, IR1, IR2,totalIR;
-long minIR = 100000, maxIR = 0;
-long mappedIR = 0;
-int counterIR = 0;
-
-PortI2C myBus (PORT_FOR_SI114);
-PulsePlug pulse (myBus);
-
-#define ToIRRange(x) ((x)*100.0)
+int ir_distance = 0;                // Stores the calculated distance 
+byte ir_high,ir_low = 0;            // High and low byte of distance
+int ir_shift = 0;                   // Value in shift bit register
 
 ////////////////////////////////////////////////
 // Pololu AltIMU-10 sensor init & calibration
@@ -155,7 +149,7 @@ void setup(){
   
   // INIT sensors
   initSensor();
-  initIRSensor();
+  
   
   timer = millis();
   delay(20);
@@ -194,9 +188,8 @@ void loop() {
     Euler_angles();
     // ***
     
-    // IR readings
-    readIRSensor();
-    extractIRReadings();
+    // IR
+    updateIR();
     
     // Prepare serial data
     prepareData();

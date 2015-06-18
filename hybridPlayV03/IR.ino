@@ -38,6 +38,8 @@ void resetIRReadings(){
 
 void readIRSensor(){
   
+  resetIRReadings();
+  
   while (counterIR < samples){
     pulse.fetchLedData();
 
@@ -54,12 +56,13 @@ void extractIRReadings(){
   red = red / counterIR;
   IR1 = IR1 / counterIR;
   IR2 = IR2 / counterIR;
+  
   totalIR = red + IR1 + IR2;
   
   minIR = min(minIR,totalIR);
   maxIR = max(maxIR,totalIR);
   
-  mappedIR = map(totalIR,minIR,maxIR,0,1000);
+  mappedIR = int(map(totalIR,minIR,maxIR,0,254));
 }
 
 float smooth(float data, float filterVal, float smoothedVal){

@@ -22,7 +22,11 @@ void prepareData(){
   angleX = int(ToDeg(roll));
   angleY = int(ToDeg(pitch));
   angleZ = int(ToDeg(yaw));
-  valIR  = int(mappedIR);
+  if(ir_distance < 100 && ir_distance > 3){
+    valIR  = int(ir_distance);
+  }else{
+    valIR = int(0);
+  }
 }
 
 void sendSerialPacket(){
