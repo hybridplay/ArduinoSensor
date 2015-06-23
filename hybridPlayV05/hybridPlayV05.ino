@@ -1,25 +1,54 @@
 
 /*
- * HybridPlay v0.4 | 05/2015
+ * HybridPlay v0.5 | 06/2015
  * ------------------------- 
  *  
  * Read HybridPlay sensors (Pololu AltIMU-10 board & infrared GP2Y0E02B), and
  * send the data via serial/bluetooth
  *
- * rev 4:
- * - updated electronics
+ * rev 05:
+ * - final board, based on LilyPad Arduino USB, added led power button and speaker
+ *
+ * PINs Mapping:
+ * 
+ *  pin 11 digital --> speaker
+ *  pin 10 digital --> power LED
+ *  pin 0 analog --> battery
  *
  * (cc) 2015 Lalalab n3m3da
  * http://www.lalalab.org
  * http://www.d3cod3.org
  */
+
+ 
  
 // External Libraries
+#include "pitches.h"
 #include <SI114.h>
 #include <Wire.h>
 
+
 // DEBUG vars
-boolean debugMode = true;
+boolean debugMode = false;
+
+////////////////////////////////////////////////
+// Hardware interface
+#define speaker 11
+#define powerLed 10
+#define batteryPin 0
+
+long timerBattery = 0;
+int batteryCapacity = 150; // mAh
+int powerLedBrightness = 0;
+int powerLedFade = 5;
+
+int sensorON_melody[] = {
+  NOTE_C4, NOTE_C4, NOTE_C4
+};
+// note durations: 4 = quarter note, 8 = eighth note, etc.:
+int sensorON_durations[] = {
+  16, 16, 16
+};
 
 ////////////////////////////////////////////////
 // GP2Y0E02B IR proximity sensor Variables
@@ -129,9 +158,6 @@ float Temporary_Matrix[3][3]={
     0,0,0  }
 };
 
-// Hardware interface
-#define STATUS_LED 13
-
 // Serial packet
 #define SERIAL_BAUD_VEL 115200
 const char HEADER = 'H';
@@ -141,17 +167,28 @@ int angleX = 0;
 int angleY = 0;
 int angleZ = 0;
 int valIR = 0;
+int valBattery = 0;
 
 void setup(){ 
-  Serial.begin(SERIAL_BAUD_VEL);
+
+  // Serial
+  initSerial();
   
-  pinMode(STATUS_LED,OUTPUT);
+  // Power Led Mode
+  pinMode(powerLed,OUTPUT);
+
+  // sound on start
+  sensorON_play();
   
-  // INIT sensors
+  // INIT sensor
   initSensor();
+
+  // Battery
+  readBattery();
   
-  
+  // Time
   timer = millis();
+  timerBattery = millis();
   delay(20);
   counter = 0;
   
@@ -187,6 +224,15 @@ void loop() {
     Drift_correction();
     Euler_angles();
     // ***
+
+    // POWER LED
+    fadeLed();
+
+    // Battery
+    if((millis()-timerBattery) >= 60000){ // read battery level every minute
+      timerBattery = millis();
+      readBattery();
+    }
     
     // IR
     updateIR();
@@ -194,12 +240,13 @@ void loop() {
     // Prepare serial data
     prepareData();
   
-    // print on serial port
+    // print on usb (Serial)
     if(debugMode){
-      printData(); // <-- TESTING, HUMAN READABLE CONSOLE PRINT
-    }else{
-      sendSerialPacket(); // <-- binary data send
+      printData();
     }
+
+    // data send via BLUETOOTH (Serial1)
+    sendSerialPacket(); // <-- binary data send
   
   }
   
